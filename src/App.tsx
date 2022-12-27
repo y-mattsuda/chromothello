@@ -1,34 +1,112 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
+import * as React from "react";
+import styled from "styled-components";
+import GameContainer from "./GameContainer";
+import ErrorBoundary from "./ErrorBoundary";
+import { ReversiCell, AIKind } from "./models";
+import StartButton from "./StartButton";
 
-function App() {
-  const [count, setCount] = useState(0)
+const AIKindNames: { [kind: number]: string } = {
+  [AIKind.PickFirst]: "Make First Available Move",
+  [AIKind.MinMaxTree]: "Min Max Tree",
+  [AIKind.Human]: "Human",
+  [AIKind.OnePly]: "One-Ply Best",
+};
+
+const App = () => {
+  // NOTE: This must be an even number so that
+  // the starting tiles can be generated accordingly:
+  const [boardSize, setBoardSize] = React.useState(8);
+  const [playerColor, setPlayerColor] = React.useState(ReversiCell.White);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [aiKind, setAIKind] = React.useState<AIKind>(AIKind.PickFirst);
+
+  const startGame = () => {
+    if (!isPlaying) {
+      setIsPlaying(true);
+    }
+  };
+
+  if (isPlaying) {
+    return (
+      <Background>
+        <ErrorBoundary setIsPlaying={setIsPlaying}>
+          <GameContainer
+            boardSize={boardSize}
+            playerColor={playerColor}
+            setIsPlaying={setIsPlaying}
+            aiKind={aiKind}
+          />
+        </ErrorBoundary>
+      </Background>
+    );
+  } else {
+    return (
+      <Background>
+        <StartArea>
+          <MainTitle>Welcome to Chromothello</MainTitle>
+          <AIKindPicker selected={aiKind} setAIKind={setAIKind} />
+          <StartButton onClick={startGame}>Start a Game</StartButton>
+        </StartArea>
+      </Background>
+    );
+  }
+};
+
+const AIKindPicker = (props: {
+  selected: AIKind;
+  setAIKind(kind: AIKind): void;
+}) => {
+  const options = Object.keys(AIKind)
+    .map(Number)
+    .filter((key) => !isNaN(key))
+    .map((key) => (
+      <div key={key}>
+        <input
+          id={key + "-kind-radio"}
+          type="radio"
+          onChange={() => props.setAIKind(key)}
+          checked={key == props.selected}
+        />
+        <label htmlFor={key + "-kind-radio"}>
+          {" "}
+          {AIKindNames[key] || AIKind[key]}
+        </label>
+      </div>
+    ));
 
   return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
-  )
-}
+    <HorizontalHolder>
+      <h2>AI:</h2>
+      <AIKindDropdown>{options}</AIKindDropdown>
+    </HorizontalHolder>
+  );
+};
 
-export default App
+const HorizontalHolder = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+`;
+
+const AIKindDropdown = styled.div`
+  font-size: 14px;
+  margin-left: 30px;
+  line-height: 30px;
+`;
+
+const MainTitle = styled.h1`
+  margin-bottom: 50px;
+  font-family: sans-serif;
+`;
+const StartArea = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 100px;
+`;
+
+const Background = styled.div`
+  background-color: white;
+`;
+
+export default App;
